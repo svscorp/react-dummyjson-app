@@ -1,5 +1,7 @@
 # React dummyjson app
 
+![Demo](demo.png)
+
 ## Prerequisites
 
 1. Node (v.22)
