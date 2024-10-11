@@ -5,6 +5,8 @@ interface LayoutProps {
     children: ReactNode;
 }
 
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
     const location = useLocation();
 
@@ -16,7 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {location.pathname !== '/' && (
                     <>
                         {' / '}
-                        <span>{location.pathname.slice(1)}</span>
+                        <span>{capitalize(location.pathname.slice(1))}</span>
                     </>
                 )}
             </div>
