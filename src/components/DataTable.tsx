@@ -19,7 +19,9 @@ const DataTable = <T extends Record<string, any>>({ data, columns }: DataTablePr
             {data.map((item, index) => (
                 <tr key={index} className={index % 2 === 0 ? 'even' : 'odd'}>
                     {columns.map((column) => (
-                        <td key={`${index}-${column.key as string}`}>{item[column.key]}</td>
+                        <td key={`${index}-${column.key as string}`}>
+                            {String(item[column.key])}
+                        </td>
                     ))}
                 </tr>
             ))}

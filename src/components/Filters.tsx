@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 
+interface FilterField {
+    key: string;
+    label: string;
+    options?: string[];
+}
+
 interface FiltersProps {
-    fields: { key: string; label: string }[];
+    fields: FilterField[];
     onFilterChange: (filters: Record<string, string>) => void;
 }
 
@@ -13,22 +19,24 @@ const Filters: React.FC<FiltersProps> = ({ fields, onFilterChange }) => {
     const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
     const handleFilterChange = (field: string, value: string) => {
-        const newFilters = { ...filters, [field]: value };
+        const newFilters = { [field]: value }; // Reset other filters
         setFilters(newFilters);
         onFilterChange(newFilters);
         setActiveFilter(field);
     };
 
     const removeFilter = (field: string) => {
-        const { [field]: _, ...newFilters } = filters;
-        setFilters(newFilters);
-        onFilterChange(newFilters);
+        setFilters({});
+        onFilterChange({});
         setActiveFilter(null);
     };
 
     return (
         <div className="filters">
-            <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value) as 5 | 10 | 20 | 50)}>
+            <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value) as 5 | 10 | 20 | 50)}
+            >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
                 <option value={20}>20</option>
@@ -53,14 +61,29 @@ const Filters: React.FC<FiltersProps> = ({ fields, onFilterChange }) => {
                     </button>
                     {activeFilter === field.key && (
                         <div className="filter-input">
-                            <input
-                                type="text"
-                                placeholder={`Filter by ${field.label}`}
-                                value={filters[field.key] || ''}
-                                onChange={(e) => handleFilterChange(field.key, e.target.value)}
-                            />
+                            {field.options ? (
+                                <select
+                                    value={filters[field.key] || ''}
+                                    onChange={(e) => handleFilterChange(field.key, e.target.value)}
+                                >
+                                    {field.options.map((option) => (
+                                        <option key={option} value={option}>
+                                            {option}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <input
+                                    type="text"
+                                    placeholder={`Filter by ${field.label}`}
+                                    value={filters[field.key] || ''}
+                                    onChange={(e) => handleFilterChange(field.key, e.target.value)}
+                                />
+                            )}
                             {filters[field.key] && (
-                                <button onClick={() => removeFilter(field.key)}>×</button>
+                                <button className="close-button" onClick={() => removeFilter(field.key)}>
+                                    ×
+                                </button>
                             )}
                         </div>
                     )}

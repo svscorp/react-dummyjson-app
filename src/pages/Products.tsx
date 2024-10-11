@@ -23,11 +23,11 @@ const Products: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [activeTab, setActiveTab] = useState<'ALL' | 'Laptops'>('ALL');
-    const { data, loading, error, totalPages, fetchData } = useApi<Product>('products');
+    const { data, loading, error, fetchData } = useApi<Product>('products');
 
     useEffect(() => {
-        fetchData(currentPage, { ...filters, ...(activeTab === 'Laptops' ? { category: 'laptops' } : {}) });
-    }, [currentPage, filters, activeTab, fetchData]);
+        fetchData();
+    }, [fetchData]);
 
     const columns: { key: keyof Product; label: string }[] = [
         { key: 'id', label: 'ID' },
@@ -38,36 +38,82 @@ const Products: React.FC = () => {
         { key: 'category', label: 'Category' },
     ];
 
-    const filterFields = useMemo(() => [
-        { key: 'title', label: 'Title', options: Array.from(new Set(data.map(product => product.title))) },
-        { key: 'brand', label: 'Brand', options: Array.from(new Set(data.map(product => product.brand))) },
-        { key: 'category', label: 'Category', options: Array.from(new Set(data.map(product => product.category))) },
-    ], [data]);
+    const filterFields = useMemo(() => {
+        const brands = Array.from(new Set(data.map((product) => product.brand)));
+        const categories = Array.from(new Set(data.map((product) => product.category)));
+        return [
+            { key: 'title', label: 'Title' },
+            { key: 'brand', label: 'Brand', options: brands },
+            { key: 'category', label: 'Category', options: categories },
+        ];
+    }, [data]);
 
     const filteredData = useMemo(() => {
-        return data.filter(product =>
-            Object.entries(product).some(([key, value]) =>
-                columns.map(col => col.key).includes(key as keyof Product) &&
-                value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-            )
-        );
-    }, [data, searchTerm, columns]);
+        return data.filter((product) => {
+            // Apply tab filter
+            const matchesTab = activeTab === 'ALL' || product.category.toLowerCase() === 'laptops';
+
+            // Apply search term
+            const matchesSearch = columns.some((column) => {
+                const value = product[column.key];
+                return (
+                    value !== undefined &&
+                    value !== null &&
+                    value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            });
+
+            // Apply filters
+            const matchesFilters = Object.entries(filters).every(([key, value]) => {
+                const productValue = product[key as keyof Product];
+                return productValue !== undefined && productValue.toString() === value;
+            });
+
+            return matchesTab && matchesSearch && matchesFilters;
+        });
+    }, [data, searchTerm, columns, filters, activeTab]);
+
+    const totalFilteredPages = Math.ceil(filteredData.length / pageSize);
 
     const paginatedData = useMemo(() => {
         const startIndex = (currentPage - 1) * pageSize;
         return filteredData.slice(startIndex, startIndex + pageSize);
     }, [filteredData, currentPage, pageSize]);
 
-    const totalFilteredPages = Math.ceil(filteredData.length / pageSize);
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filters, activeTab]);
 
     return (
         <div className="products-page">
             <h1>Products</h1>
             <div>
-                <button onClick={() => setActiveTab('ALL')} disabled={activeTab === 'ALL'}>ALL</button>
-                <button onClick={() => setActiveTab('Laptops')} disabled={activeTab === 'Laptops'}>Laptops</button>
+                <button
+                    onClick={() => {
+                        setActiveTab('ALL');
+                        setCurrentPage(1);
+                    }}
+                    disabled={activeTab === 'ALL'}
+                >
+                    ALL
+                </button>
+                <button
+                    onClick={() => {
+                        setActiveTab('Laptops');
+                        setCurrentPage(1);
+                    }}
+                    disabled={activeTab === 'Laptops'}
+                >
+                    Laptops
+                </button>
             </div>
-            <Filters fields={filterFields} onFilterChange={setFilters} />
+            <Filters
+                fields={filterFields}
+                onFilterChange={(newFilters) => {
+                    setFilters(newFilters);
+                    setCurrentPage(1); // Reset to first page when filters change
+                }}
+            />
             {loading && <p>Loading...</p>}
             {error && <p>{error}</p>}
             {!loading && !error && (
