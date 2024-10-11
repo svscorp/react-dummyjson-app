@@ -5,6 +5,8 @@ interface FilterField {
     key: string;
     label: string;
     options?: string[];
+    fields?: string[];
+    exact?: boolean;
 }
 
 interface FiltersProps {
@@ -19,10 +21,16 @@ const Filters: React.FC<FiltersProps> = ({ fields, onFilterChange }) => {
     const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
     const handleFilterChange = (field: string, value: string) => {
-        const newFilters = { [field]: value }; // Reset other filters
+        let newFilters;
+        if (value === '') {
+            newFilters = {};
+            setActiveFilter(null);
+        } else {
+            newFilters = { [field]: value }; // Reset other filters
+            setActiveFilter(field);
+        }
         setFilters(newFilters);
         onFilterChange(newFilters);
-        setActiveFilter(field);
     };
 
     const removeFilter = (field: string) => {
@@ -62,28 +70,36 @@ const Filters: React.FC<FiltersProps> = ({ fields, onFilterChange }) => {
                     {activeFilter === field.key && (
                         <div className="filter-input">
                             {field.options ? (
-                                <select
-                                    value={filters[field.key] || ''}
-                                    onChange={(e) => handleFilterChange(field.key, e.target.value)}
-                                >
+                                <div className="filter-options">
                                     {field.options.map((option) => (
-                                        <option key={option} value={option}>
+                                        <button
+                                            key={option}
+                                            onClick={() => handleFilterChange(field.key, option)}
+                                            className={filters[field.key] === option ? 'selected' : ''}
+                                        >
                                             {option}
-                                        </option>
+                                        </button>
                                     ))}
-                                </select>
+                                    {filters[field.key] && (
+                                        <button className="close-button" onClick={() => removeFilter(field.key)}>
+                                            ×
+                                        </button>
+                                    )}
+                                </div>
                             ) : (
-                                <input
-                                    type="text"
-                                    placeholder={`Filter by ${field.label}`}
-                                    value={filters[field.key] || ''}
-                                    onChange={(e) => handleFilterChange(field.key, e.target.value)}
-                                />
-                            )}
-                            {filters[field.key] && (
-                                <button className="close-button" onClick={() => removeFilter(field.key)}>
-                                    ×
-                                </button>
+                                <>
+                                    <input
+                                        type="text"
+                                        placeholder={`Filter by ${field.label}`}
+                                        value={filters[field.key] || ''}
+                                        onChange={(e) => handleFilterChange(field.key, e.target.value)}
+                                    />
+                                    {filters[field.key] && (
+                                        <button className="close-button" onClick={() => removeFilter(field.key)}>
+                                            ×
+                                        </button>
+                                    )}
+                                </>
                             )}
                         </div>
                     )}

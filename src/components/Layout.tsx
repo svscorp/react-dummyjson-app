@@ -10,19 +10,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     return (
         <div className="layout">
-            <nav>
-                <ul>
-                    <li>
-                        <Link to="/">Home</Link>
-                    </li>
-                    <li>
-                        <Link to="/users">Users</Link>
-                    </li>
-                    <li>
-                        <Link to="/products">Products</Link>
-                    </li>
-                </ul>
-            </nav>
+            {/* Breadcrumb Navigation */}
             <div className="breadcrumb">
                 <Link to="/">Home</Link>
                 {location.pathname !== '/' && (

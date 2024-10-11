@@ -18,6 +18,14 @@ interface User {
     eyeColor: string;
 }
 
+interface FilterField {
+    key: string;
+    label: string;
+    options?: string[];
+    fields?: string[];
+    exact?: boolean;
+}
+
 const Users: React.FC = () => {
     const { searchTerm, pageSize } = useAppContext();
     const [currentPage, setCurrentPage] = useState(1);
@@ -40,11 +48,16 @@ const Users: React.FC = () => {
         { key: 'eyeColor', label: 'Eye Color' },
     ];
 
-    const filterFields = [
-        { key: 'firstName', label: 'Name' },
-        { key: 'email', label: 'Email' },
-        { key: 'gender', label: 'Gender', options: ['male', 'female'] },
-        { key: 'bloodGroup', label: 'Blood Type', options: Array.from(new Set(data.map(user => user.bloodGroup))) },
+    const filterFields: FilterField[] = [
+        { key: 'name', label: 'Name', fields: ['firstName', 'lastName'], exact: false },
+        { key: 'email', label: 'Email', exact: false },
+        { key: 'gender', label: 'Gender', options: ['male', 'female'], exact: true },
+        {
+            key: 'bloodGroup',
+            label: 'Blood Type',
+            options: Array.from(new Set(data.map((user) => user.bloodGroup))),
+            exact: true,
+        },
     ];
 
     const filteredData = useMemo(() => {
@@ -60,9 +73,33 @@ const Users: React.FC = () => {
             });
 
             // Apply filters
-            const matchesFilters = Object.entries(filters).every(([key, value]) => {
-                const userValue = user[key as keyof User];
-                return userValue !== undefined && userValue.toString() === value;
+            const matchesFilters = Object.entries(filters).every(([filterKey, filterValue]) => {
+                const filterField = filterFields.find((f) => f.key === filterKey);
+                if (!filterField) return true;
+                const exactMatch = filterField.exact ?? false;
+
+                if (filterField.fields) {
+                    // Multiple fields to search in
+                    return filterField.fields.some((field) => {
+                        const userValue = user[field as keyof User];
+                        return (
+                            userValue !== undefined &&
+                            userValue !== null &&
+                            (exactMatch
+                                ? userValue.toString().toLowerCase() === filterValue.toLowerCase()
+                                : userValue.toString().toLowerCase().includes(filterValue.toLowerCase()))
+                        );
+                    });
+                } else {
+                    const userValue = user[filterKey as keyof User];
+                    return (
+                        userValue !== undefined &&
+                        userValue !== null &&
+                        (exactMatch
+                            ? userValue.toString().toLowerCase() === filterValue.toLowerCase()
+                            : userValue.toString().toLowerCase().includes(filterValue.toLowerCase()))
+                    );
+                }
             });
 
             return matchesSearch && matchesFilters;
