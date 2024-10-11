@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 
-interface FilterField {
-    key: string;
+export interface FilterField<T> {
+    key: keyof T | string;
     label: string;
     options?: string[];
-    fields?: string[];
+    fields?: (keyof T)[];
     exact?: boolean;
 }
 
-interface FiltersProps {
-    fields: FilterField[];
+interface FiltersProps<T> {
+    fields: FilterField<T>[];
     onFilterChange: (filters: Record<string, string>) => void;
 }
 
-const Filters: React.FC<FiltersProps> = ({ fields, onFilterChange }) => {
+const Filters = <T extends unknown>({ fields, onFilterChange }: FiltersProps<T>) => {
     const { pageSize, setPageSize, searchTerm, setSearchTerm } = useAppContext();
     const [filters, setFilters] = useState<Record<string, string>>({});
     const [showSearch, setShowSearch] = useState(false);
@@ -26,12 +26,11 @@ const Filters: React.FC<FiltersProps> = ({ fields, onFilterChange }) => {
         if (value === '') {
             newFilters = {};
         } else {
-            newFilters = { [field]: value }; // Reset other filters
+            newFilters = { [field]: value };
         }
         setFilters(newFilters);
         onFilterChange(newFilters);
 
-        // For text filters, keep the dropdown open; for option filters, close it
         if (filterField && filterField.options) {
             setActiveFilter(null);
         }
@@ -66,77 +65,105 @@ const Filters: React.FC<FiltersProps> = ({ fields, onFilterChange }) => {
                 />
             )}
             <span className="separator">|</span>
-            {fields.map((field) => {
-                const isActive = activeFilter === field.key;
-                const isFiltered = filters[field.key];
+            {fields.map((field) => (
+                <FilterDropdown
+                    key={String(field.key)} // Ensure key is a string
+                    field={field}
+                    isActive={activeFilter === field.key}
+                    isFiltered={!!filters[field.key as string]}
+                    filterValue={filters[field.key as string]}
+                    setActiveFilter={setActiveFilter}
+                    handleFilterChange={handleFilterChange}
+                    removeFilter={removeFilter}
+                />
+            ))}
+        </div>
+    );
+};
 
-                return (
-                    <div key={field.key} className="filter-dropdown">
-                        <button onClick={() => setActiveFilter(isActive ? null : field.key)}>
-                            {field.label} ▼
-                        </button>
-                        {field.options ? (
-                            // Option filter
-                            <>
-                                {isActive && (
-                                    <div className="filter-input">
-                                        <div className="filter-options">
-                                            {field.options.map((option) => (
-                                                <button
-                                                    key={`${field.key}-${option}`}
-                                                    onClick={() => handleFilterChange(field.key, option)}
-                                                    className={filters[field.key] === option ? 'selected' : ''}
-                                                >
-                                                    {option}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {!isActive && isFiltered && (
-                                    <div className="selected-filter-under">
-                                        {filters[field.key]}
-                                        <button className="close-button" onClick={() => removeFilter(field.key)}>
+interface FilterDropdownProps<T> {
+    field: FilterField<T>;
+    isActive: boolean;
+    isFiltered: boolean;
+    filterValue: string;
+    setActiveFilter: (key: string | null) => void;
+    handleFilterChange: (field: string, value: string) => void;
+    removeFilter: (field: string) => void;
+}
+
+const FilterDropdown = <T extends unknown>({
+                                               field,
+                                               isActive,
+                                               isFiltered,
+                                               filterValue,
+                                               setActiveFilter,
+                                               handleFilterChange,
+                                               removeFilter,
+                                           }: FilterDropdownProps<T>) => {
+    return (
+        <div className="filter-dropdown">
+            <button onClick={() => setActiveFilter(isActive ? null : String(field.key))}>
+                {field.label} ▼
+            </button>
+            {field.options ? (
+                // Option filter
+                <>
+                    {isActive && (
+                        <div className="filter-input">
+                            <div className="filter-options">
+                                {field.options.map((option) => (
+                                    <button
+                                        key={`${String(field.key)}-${option}`} // Convert field.key to string
+                                        onClick={() => handleFilterChange(String(field.key), option)}
+                                        className={filterValue === option ? 'selected' : ''}
+                                    >
+                                        {option}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {!isActive && isFiltered && (
+                        <div className="selected-filter-under">
+                            {filterValue}
+                            <button className="close-button" onClick={() => removeFilter(String(field.key))}>
+                                ×
+                            </button>
+                        </div>
+                    )}
+                </>
+            ) : (
+                // Text filter
+                <>
+                    {isActive && (
+                        <div className="filter-input">
+                            <div className="filter-text-dropdown">
+                                <div className="input-with-close">
+                                    <input
+                                        type="text"
+                                        placeholder={`Filter by ${field.label}`}
+                                        value={filterValue || ''}
+                                        onChange={(e) => handleFilterChange(String(field.key), e.target.value)}
+                                    />
+                                    {filterValue && (
+                                        <button className="close-button" onClick={() => removeFilter(String(field.key))}>
                                             ×
                                         </button>
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            // Text filter
-                            <>
-                                {isActive && (
-                                    <div className="filter-input">
-                                        <div className="filter-text-dropdown">
-                                            <div className="input-with-close">
-                                                <input
-                                                    type="text"
-                                                    placeholder={`Filter by ${field.label}`}
-                                                    value={filters[field.key] || ''}
-                                                    onChange={(e) => handleFilterChange(field.key, e.target.value)}
-                                                />
-                                                {filters[field.key] && (
-                                                    <button className="close-button" onClick={() => removeFilter(field.key)}>
-                                                        ×
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                {!isActive && isFiltered && (
-                                    <div className="selected-filter-under">
-                                        {filters[field.key]}
-                                        <button className="close-button" onClick={() => removeFilter(field.key)}>
-                                            ×
-                                        </button>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-                );
-            })}
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {!isActive && isFiltered && (
+                        <div className="selected-filter-under">
+                            {filterValue}
+                            <button className="close-button" onClick={() => removeFilter(String(field.key))}>
+                                ×
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
         </div>
     );
 };

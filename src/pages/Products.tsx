@@ -1,10 +1,10 @@
-// Import necessary hooks and components
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAppContext } from '../contexts/AppContext';
 import DataTable from '../components/DataTable';
-import Filters from '../components/Filters';
+import Filters, { FilterField } from '../components/Filters';
 import Pagination from '../components/Pagination';
+import { useFilteredData } from '../hooks/useFilteredData';
 
 interface Product {
     id: number;
@@ -19,20 +19,10 @@ interface Product {
     thumbnail: string;
 }
 
-interface FilterField {
-    key: string;
-    label: string;
-    options?: string[];
-    fields?: string[];
-    exact?: boolean;
-}
-
 const Products: React.FC = () => {
     const { searchTerm, pageSize } = useAppContext();
-    const [currentPage, setCurrentPage] = useState(1);
-    const [filters, setFilters] = useState<Record<string, string>>({});
-    const [activeTab, setActiveTab] = useState<'ALL' | 'Laptops'>('ALL');
     const { data, loading, error, fetchData } = useApi<Product>('products');
+    const [activeTab, setActiveTab] = useState<'ALL' | 'laptops'>('ALL');
 
     useEffect(() => {
         fetchData();
@@ -47,74 +37,31 @@ const Products: React.FC = () => {
         { key: 'category', label: 'Category' },
     ];
 
-    const brands = Array.from(new Set(data.map((product) => product.brand)));
-    const categories = Array.from(new Set(data.map((product) => product.category)));
+    const brands = Array.from(new Set(data.map((product) => product.brand).filter(Boolean)));
+    const categories = Array.from(new Set(data.map((product) => product.category).filter(Boolean)));
 
-    const filterFields: FilterField[] = [
+    const filterFields: FilterField<Product>[] = [
         { key: 'title', label: 'Title', exact: false },
         { key: 'brand', label: 'Brand', options: brands, exact: true },
         { key: 'category', label: 'Category', options: categories, exact: true },
     ];
 
-    const filteredData = useMemo(() => {
-        return data.filter((product) => {
-            // Apply tab filter
-            const matchesTab = activeTab === 'ALL' || product.category.toLowerCase() === 'laptops';
-
-            // Apply search term
-            const matchesSearch = columns.some((column) => {
-                const value = product[column.key];
-                return (
-                    value !== undefined &&
-                    value !== null &&
-                    value.toString().toLowerCase().includes(searchTerm.toLowerCase())
-                );
-            });
-
-            // Apply filters
-            const matchesFilters = Object.entries(filters).every(([filterKey, filterValue]) => {
-                const filterField = filterFields.find((f) => f.key === filterKey);
-                if (!filterField) return true;
-                const exactMatch = filterField.exact ?? false;
-
-                if (filterField.fields) {
-                    // Multiple fields to search in
-                    return filterField.fields.some((field) => {
-                        const productValue = product[field as keyof Product];
-                        return (
-                            productValue !== undefined &&
-                            productValue !== null &&
-                            (exactMatch
-                                ? productValue.toString().toLowerCase() === filterValue.toLowerCase()
-                                : productValue.toString().toLowerCase().includes(filterValue.toLowerCase()))
-                        );
-                    });
-                } else {
-                    const productValue = product[filterKey as keyof Product];
-                    return (
-                        productValue !== undefined &&
-                        productValue !== null &&
-                        (exactMatch
-                            ? productValue.toString().toLowerCase() === filterValue.toLowerCase()
-                            : productValue.toString().toLowerCase().includes(filterValue.toLowerCase()))
-                    );
-                }
-            });
-
-            return matchesTab && matchesSearch && matchesFilters;
-        });
-    }, [data, searchTerm, columns, filters, activeTab, filterFields]);
-
-    const totalFilteredPages = Math.ceil(filteredData.length / pageSize);
-
-    const paginatedData = useMemo(() => {
-        const startIndex = (currentPage - 1) * pageSize;
-        return filteredData.slice(startIndex, startIndex + pageSize);
-    }, [filteredData, currentPage, pageSize]);
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, filters, activeTab]);
+    const {
+        currentPage,
+        setCurrentPage,
+        filters,
+        setFilters,
+        paginatedData,
+        totalFilteredPages,
+    } = useFilteredData<Product>({
+        data,
+        columns,
+        filterFields,
+        searchTerm,
+        pageSize,
+        activeTab: activeTab === 'ALL' ? undefined : activeTab,
+        tabField: 'category',
+    });
 
     return (
         <div className="products-page">
@@ -131,10 +78,10 @@ const Products: React.FC = () => {
                 </button>
                 <button
                     onClick={() => {
-                        setActiveTab('Laptops');
+                        setActiveTab('laptops');
                         setCurrentPage(1);
                     }}
-                    disabled={activeTab === 'Laptops'}
+                    disabled={activeTab === 'laptops'}
                 >
                     Laptops
                 </button>
@@ -143,7 +90,7 @@ const Products: React.FC = () => {
                 fields={filterFields}
                 onFilterChange={(newFilters) => {
                     setFilters(newFilters);
-                    setCurrentPage(1); // Reset to first page when filters change
+                    setCurrentPage(1);
                 }}
             />
             {loading && <p>Loading...</p>}
