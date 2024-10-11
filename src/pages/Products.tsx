@@ -1,3 +1,4 @@
+// Import necessary hooks and components
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAppContext } from '../contexts/AppContext';
@@ -16,6 +17,14 @@ interface Product {
     brand: string;
     category: string;
     thumbnail: string;
+}
+
+interface FilterField {
+    key: string;
+    label: string;
+    options?: string[];
+    fields?: string[];
+    exact?: boolean;
 }
 
 const Products: React.FC = () => {
@@ -38,15 +47,14 @@ const Products: React.FC = () => {
         { key: 'category', label: 'Category' },
     ];
 
-    const filterFields = useMemo(() => {
-        const brands = Array.from(new Set(data.map((product) => product.brand)));
-        const categories = Array.from(new Set(data.map((product) => product.category)));
-        return [
-            { key: 'title', label: 'Title' },
-            { key: 'brand', label: 'Brand', options: brands },
-            { key: 'category', label: 'Category', options: categories },
-        ];
-    }, [data]);
+    const brands = Array.from(new Set(data.map((product) => product.brand)));
+    const categories = Array.from(new Set(data.map((product) => product.category)));
+
+    const filterFields: FilterField[] = [
+        { key: 'title', label: 'Title', exact: false },
+        { key: 'brand', label: 'Brand', options: brands, exact: true },
+        { key: 'category', label: 'Category', options: categories, exact: true },
+    ];
 
     const filteredData = useMemo(() => {
         return data.filter((product) => {
@@ -64,14 +72,38 @@ const Products: React.FC = () => {
             });
 
             // Apply filters
-            const matchesFilters = Object.entries(filters).every(([key, value]) => {
-                const productValue = product[key as keyof Product];
-                return productValue !== undefined && productValue.toString() === value;
+            const matchesFilters = Object.entries(filters).every(([filterKey, filterValue]) => {
+                const filterField = filterFields.find((f) => f.key === filterKey);
+                if (!filterField) return true;
+                const exactMatch = filterField.exact ?? false;
+
+                if (filterField.fields) {
+                    // Multiple fields to search in
+                    return filterField.fields.some((field) => {
+                        const productValue = product[field as keyof Product];
+                        return (
+                            productValue !== undefined &&
+                            productValue !== null &&
+                            (exactMatch
+                                ? productValue.toString().toLowerCase() === filterValue.toLowerCase()
+                                : productValue.toString().toLowerCase().includes(filterValue.toLowerCase()))
+                        );
+                    });
+                } else {
+                    const productValue = product[filterKey as keyof Product];
+                    return (
+                        productValue !== undefined &&
+                        productValue !== null &&
+                        (exactMatch
+                            ? productValue.toString().toLowerCase() === filterValue.toLowerCase()
+                            : productValue.toString().toLowerCase().includes(filterValue.toLowerCase()))
+                    );
+                }
             });
 
             return matchesTab && matchesSearch && matchesFilters;
         });
-    }, [data, searchTerm, columns, filters, activeTab]);
+    }, [data, searchTerm, columns, filters, activeTab, filterFields]);
 
     const totalFilteredPages = Math.ceil(filteredData.length / pageSize);
 

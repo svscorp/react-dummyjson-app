@@ -83,7 +83,7 @@ const Filters: React.FC<FiltersProps> = ({ fields, onFilterChange }) => {
                                         <div className="filter-options">
                                             {field.options.map((option) => (
                                                 <button
-                                                    key={option}
+                                                    key={`${field.key}-${option}`}
                                                     onClick={() => handleFilterChange(field.key, option)}
                                                     className={filters[field.key] === option ? 'selected' : ''}
                                                 >
@@ -107,18 +107,20 @@ const Filters: React.FC<FiltersProps> = ({ fields, onFilterChange }) => {
                             <>
                                 {isActive && (
                                     <div className="filter-input">
-                                        <div className="input-with-close">
-                                            <input
-                                                type="text"
-                                                placeholder={`Filter by ${field.label}`}
-                                                value={filters[field.key] || ''}
-                                                onChange={(e) => handleFilterChange(field.key, e.target.value)}
-                                            />
-                                            {filters[field.key] && (
-                                                <button className="close-button" onClick={() => removeFilter(field.key)}>
-                                                    ×
-                                                </button>
-                                            )}
+                                        <div className="filter-text-dropdown">
+                                            <div className="input-with-close">
+                                                <input
+                                                    type="text"
+                                                    placeholder={`Filter by ${field.label}`}
+                                                    value={filters[field.key] || ''}
+                                                    onChange={(e) => handleFilterChange(field.key, e.target.value)}
+                                                />
+                                                {filters[field.key] && (
+                                                    <button className="close-button" onClick={() => removeFilter(field.key)}>
+                                                        ×
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 )}

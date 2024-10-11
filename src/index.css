@@ -29,9 +29,10 @@ body {
   text-decoration: none;
 }
 
+/* Filters styles */
 .filters {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
   margin-bottom: 20px;
 }
@@ -39,6 +40,7 @@ body {
 .filters > * {
   margin-right: 10px;
   position: relative;
+  flex-shrink: 0;
 }
 
 .separator {
@@ -48,6 +50,7 @@ body {
 .filter-dropdown {
   position: relative;
   margin-right: 10px;
+  flex-shrink: 0;
 }
 
 .filter-dropdown button {
@@ -56,14 +59,46 @@ body {
   cursor: pointer;
 }
 
+.selected-filter-under {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-grey);
+  z-index: 1;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.selected-filter-under .close-button {
+  font-size: 1em;
+  margin-left: 5px;
+}
+
 .filter-input {
   position: relative;
   margin-top: 5px;
 }
 
-.filter-input .input-with-close {
+.filter-text-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-grey);
+  z-index: 1;
+  padding: 5px;
+  min-width: 150px;
+}
+
+.filter-text-dropdown .input-with-close {
   display: flex;
   align-items: center;
+}
+
+.filter-text-dropdown input {
+  width: 150px;
 }
 
 .filter-input input,
@@ -104,27 +139,7 @@ body {
   margin-left: 5px;
 }
 
-.selected-filter-under {
-  margin-top: 5px;
-  display: flex;
-  align-items: center;
-}
-
-.selected-filter-under .close-button {
-  font-size: 1em;
-  margin-left: 5px;
-}
-
-/* Adjusted styles for input field and close button alignment */
-.filter-input input {
-  flex-grow: 1;
-}
-
-.filter-input button.close-button {
-  margin-left: 5px;
-}
-
-/* Data Table styles */
+/* Data table styles */
 .data-table {
   width: 100%;
   border-collapse: collapse;
