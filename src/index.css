@@ -1,13 +1,116 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import url('https://fonts.googleapis.com/css2?family=Neutra+Text&display=swap');
+
+:root {
+  --color-black: #322625;
+  --color-grey: #ebebeb;
+  --color-blue: #c0e3e5;
+  --color-yellow: #fdc936;
+  --color-white: #ffffff;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+body {
+  font-family: 'Neutra Text', sans-serif;
+  background-color: var(--color-grey);
+  color: var(--color-black);
+}
+
+.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+nav ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+nav ul li {
+  display: inline;
+  margin-right: 10px;
+}
+
+.breadcrumb {
+  margin-bottom: 20px;
+}
+
+.breadcrumb a {
+  color: var(--color-yellow);
+  text-decoration: none;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filters > * {
+  margin-right: 10px;
+}
+
+.separator {
+  color: var(--color-black);
+}
+
+.filter-dropdown {
+  position: relative;
+}
+
+.filter-input {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--color-white);
+  padding: 5px;
+  border: 1px solid var(--color-grey);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid var(--color-grey);
+}
+
+.data-table th {
+  background-color: var(--color-blue);
+  font-weight: bold;
+}
+
+.data-table tr:nth-child(even) {
+  background-color: var(--color-white);
+}
+
+.data-table tr:nth-child(odd) {
+  background-color: var(--color-grey);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pagination button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-black);
+}
+
+.pagination button.active {
+  transform: translateY(-5px);
+  color: var(--color-yellow);
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
